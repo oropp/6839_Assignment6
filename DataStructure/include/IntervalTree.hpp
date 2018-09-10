@@ -66,8 +66,6 @@ namespace data_structure {
         T eps;                          // just for geometry boundary check, you can modify its value depending on your implementation
 
         /* You can add any variables you need here */
-
-        /* Removed */
-        std::vector<std::vector<IntervalEntry<T>>> _tree_sort_left, _tree_sort_right;
+        
     };
 }
