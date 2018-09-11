@@ -30,7 +30,7 @@ namespace fab_translation {
         void RunTranslation(std::vector<std::vector<std::vector<Vector3<T>>>>& contour,
             std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>>& infill_edges) {
 
-            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>> intersection_edges;
+            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>> intersection_edges;
 
             Slicing_bruteforce(_tri_mesh, intersection_edges);
 
@@ -45,7 +45,7 @@ namespace fab_translation {
             goal: slice the triangle mesh by a set of parallel planes, 
                   output an intersection edge soup for each layer */
         void Slicing_bruteforce(mesh::TriMesh<T>& tri_mesh, 
-            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>> &intersection_edges) {
+            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>> &intersection_edges) {
 
             std::vector<Eigen::Vector3i>& elements = tri_mesh.elements();
             std::vector<Vector3<T>>& vertices = tri_mesh.vertices();
@@ -72,7 +72,7 @@ namespace fab_translation {
         }
 
         void Slicing_accelerated(mesh::TriMesh<T>& tri_mesh,
-            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>> &intersection_edges) {
+            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>> &intersection_edges) {
             
             std::vector<Eigen::Vector3i>& elements = tri_mesh.elements();
             std::vector<Vector3<T>>& vertices = tri_mesh.vertices();
@@ -107,7 +107,7 @@ namespace fab_translation {
             Goal: Given an intersetion edge soup for each layer, link those edges one by one to form contour loops.
                   Each layer probably has several disjoint contour loops. */
         void CreateContour(mesh::TriMesh<T>& tri_mesh,
-            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>> &intersection_edges,
+            std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>> &intersection_edges,
             std::vector<std::vector<std::vector<Vector3<T>>>>& contours) {
             
             /* Implement your code here */
