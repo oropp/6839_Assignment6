@@ -47,17 +47,19 @@ namespace geometry {
         Vector3<T>* vertices() { return _vertices; }
         Vector3<T>& vertices(int idx) { return _vertices[idx]; }
 
-        /* Implement triangle plane intersection.
-            Input is a plane, output is a list of intersection points
-            Hints:
-                1. Take some considerations: handle duplicate intersections (when plane intersect with 
-                    triangle at corner but you find them by edge-plane intersection).
-                2. You can modify the function input/return type to any format you want.
-        */
-        std::vector<Vector3<T>> IntersectPlane(Plane<T> p) {
+        std::vector<Vector3<T>> IntersectPlane(Plane<T> p) {}
+
+        // Assignment 2: implement ray-triangle intersection.
+        // The ray is defined as r(t) = origin + t * dir.
+        // You should return a scalar t such that r(t) is the intersection point. Which value
+        // to return for the case of no intersections is up to you. You can also change the
+        // signature of this function as you see fit.
+        const T IntersectRay(const Vector3<T>& origin, const Vector3<T>& dir) const {
+            /* Assignment 2. */
             /* Implement your code here */
+            return 0;
         }
-        
+
     private:
         Vector3<T> _vertices[3];
     };

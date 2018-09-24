@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_LIBRARIES -ldl)
 
 set( Eigen3_VERSION "3.3.4" )
 
+set(CMAKE_CXX_FLAGS -O3 ${CMAKE_CXX_FLAGS})
+
 # Expose PROJECT_SOURCE_DIR to the source code.
 add_definitions(-DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
