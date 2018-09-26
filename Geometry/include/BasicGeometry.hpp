@@ -56,6 +56,80 @@ namespace geometry {
         */
         std::vector<Vector3<T>> IntersectPlane(Plane<T> p) {
             /* Implement your code here */
+	        std::vector<Vector3<T>> edge;
+
+	        for (int i = 0; i < 3; ++i) {
+	            Vector3<T> v_1 = _vertices[i];
+	            T dist_1;
+	            if (p.onPlane(v_1, dist_1)) {
+	                edge.push_back(v_1);
+	            }
+	        }
+	        for (int i = 0; i < 3; ++i) {
+	            Vector3<T> v_1 = _vertices[i];
+	            T dist_1;
+	            if (p.onPlane(v_1, dist_1)) {
+                    continue;
+                }
+	            int j = (i + 1)%3;
+                Vector3<T> v_2 = _vertices[j];
+                T dist_2;
+                if (p.onPlane(v_2, dist_2)) {
+                    continue;
+                }
+                if (i == j) {
+                    continue;
+                } else if (dist_1 * dist_2 < 0) {
+                    if (dist_1 < 0) {
+                        dist_1 = -1 * dist_1;
+                    }
+                    if (dist_2 < 0) {
+                        dist_2 = -1 * dist_2;
+                    }
+                    Vector3<T> triangle_edge = v_2 - v_1;
+                    Vector3<T> plane_intersection = v_1 + triangle_edge*(dist_1/(dist_1 + dist_2));
+
+                    edge.push_back(plane_intersection);
+                }
+	        }
+	        return edge;
+
+//	        int numOnPlane = 0;
+//
+//	        for (int i = 0; i < 3; ++i) {
+//		        Vector3<T> v_1 = _vertices[i];
+//		        T dist_1;
+//		        if (p.onPlane(v_1, dist_1)) {
+//		            edge.push_back(v_1);
+//		            numOnPlane += 1;
+//		        } else {
+//		            for (int j = 0; j < 3; ++j) {
+//			            Vector3<T> v_2 = _vertices[j];
+//			            T dist_2;
+//			            p.onPlane(v_2, dist_2);
+//		                if (i == j) {
+//			                continue;
+//		                } else if (dist_1 * dist_2 < 0) {
+//			                if (dist_1 < 0) {
+//				                dist_1 = -1 * dist_1;
+//			                }
+//			                if (dist_2 < 0) {
+//				                dist_2 = -1 * dist_2;
+//			                }
+//			                Vector3<T> triangle_edge = v_1 - v_2;
+//			                Vector3<T> plane_intersection = triangle_edge*(dist_1/(dist_1 + dist_2));
+//
+//			                edge.push_back(plane_intersection);
+//		                }
+//		            }
+//		            if (edge.size() > 0) {
+//		                return edge;
+//		            }
+//		        }
+//		        if (numOnPlane == 2) {
+//		            return edge;
+//		        }
+//	        }
         }
         
     private:

@@ -20,6 +20,26 @@ namespace fab_translation {
             /* Implement your code here */
             /* 1. Initialize your variables
                2. Build interval tree */
+
+	        for (T h = bottom; h < top; h += dx) {
+		        z_map.push_back(std::vector<std::vector<Vector3<T>>>());
+	        }
+
+	        for (int i = 0; i < tri_mesh.elements().size(); ++i) {
+		        std::vector<Vector3<T>> triangle;
+		        for (int j = 0; j < 3; j++) {
+		            triangle.push_back(tri_mesh.vertices(tri_mesh.elements(i)[j]));
+		        }
+		        float min_z = std::min(triangle[0][2], std::min(triangle[1][2], triangle[2][2]));
+		        float max_z = std::max(triangle[0][2], std::max(triangle[1][2], triangle[2][2]));
+
+		        int bottom_layer = floor((min_z - bottom)/dx);
+		        int top_layer = ceil((max_z - bottom)/dx);
+
+		        for (int j = bottom_layer; j <= top_layer; ++j) {
+		            z_map[j].push_back(triangle);
+		        }
+	        }
         }
 
         /* Main entrance for FabSlicer
@@ -31,14 +51,20 @@ namespace fab_translation {
             std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>>& infill_edges) {
 
             std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>> intersection_edges;
-
+            int t_0 = clock();
             Slicing_bruteforce(_tri_mesh, intersection_edges);
+            int t_1 = clock();
 
-            // Slicing_accelerated(_tri_mesh, intersection_edges);
 
+            Slicing_accelerated(_tri_mesh, intersection_edges);
+            int t_2 = clock();
+
+            printf("bruteforce: %d\n", t_1 - t_0);
+            printf("accelerated: %d\n", t_2 - t_1);
             CreateContour(_tri_mesh, intersection_edges, contour);
-
+            VisualizeContour("/home/computationalfabrication/CompFab/ComputationalFabrication/data/bunny-contour.ply", 0.001, contour);
             Infill(contour, infill_edges);
+            VisualizeInfill("/home/computationalfabrication/CompFab/ComputationalFabrication/data/bunny-infill.ply", 0.001, infill_edges);
         }
 
         /* Slicing algorithms
@@ -64,7 +90,12 @@ namespace fab_translation {
 
                     /* Implement your code here */
                     /* What kinds of intersections should be added into intersection edge list? */
-
+		            std::pair<Vector3<T>, Vector3<T>> edge;
+		            int size = intersections.size();
+		            if (size == 2) {
+		                edge = std::make_pair(intersections[0], intersections[1]);
+		                intersections_one_plane.push_back(edge);
+		            }
                 }
 
                 intersection_edges.push_back(intersections_one_plane);
@@ -79,27 +110,34 @@ namespace fab_translation {
             std::vector<Eigen::Vector3i>& edges = tri_mesh.edges();
 
             intersection_edges.clear();
-
+            int i = 0;
             for (T h = _bottom; h <= _top; h += _dx) {
-
-                std::vector<data_structure::IntervalEntry<T>> candidates;
                 /* Implement your code here */
                 /* Retrieve candidate triangle list */
+                std::vector<std::vector<Vector3<T>>>& candidates = z_map[i];
 
                 std::vector<std::pair<Vector3<T>, Vector3<T>>> intersections_one_plane;
                 intersections_one_plane.clear();
 
                 geometry::Plane<T> plane(Vector3<T>(0, 0, h), Vector3<T>(0, 0, 1));
                 for (int ii = 0;ii < candidates.size();++ii) {
-                    int i = candidates[ii].id;
-                    geometry::Triangle<T> triangle(vertices[elements[i](0)], vertices[elements[i](1)], vertices[elements[i](2)]);
+
+                    std::vector<Vector3<T>>& tri = candidates[ii];
+                    geometry::Triangle<T> triangle(tri[0], tri[1], tri[2]);
                     std::vector<Vector3<T>> intersections = triangle.IntersectPlane(plane);
                     
                     /* Implement your code here */
                     /* What kinds of intersections should be added into intersection edge list? */
+                    std::pair<Vector3<T>, Vector3<T>> edge;
+                    int size = intersections.size();
+                    if (size == 2) {
+                        edge = std::make_pair(intersections[0], intersections[1]);
+                        intersections_one_plane.push_back(edge);
+                    }
                 }
 
                 intersection_edges.push_back(intersections_one_plane);
+                i += 1;
             }
         }
 
@@ -113,8 +151,73 @@ namespace fab_translation {
             /* Implement your code here */
             /* Input is a edge soup, your task is to generate the loop by linking those edges one by one.
                Thinking about how to find two edge sharing a same end point. set a threshold? or a more clever way? */
+	        for (int i = 0; i < intersection_edges.size(); ++i) {
+		        std::vector<std::pair<Vector3<T>, Vector3<T>>> intersection_edges_plane = intersection_edges[i];
 
+		        std::vector<std::vector<Vector3<T>>> contours_plane;
+
+	    	    while (intersection_edges_plane.size() > 0) {
+		            std::vector<Vector3<T>> contour;
+	    	        contour.push_back(intersection_edges_plane[0].first);
+	    	        contour.push_back(intersection_edges_plane[0].second);
+                    intersection_edges_plane.erase(intersection_edges_plane.begin(), intersection_edges_plane.begin() + 1);
+	
+	    	        bool contour_complete = false;
+
+	    	        while (!contour_complete) {
+		                AddToContour(contour, intersection_edges_plane, contour_complete);
+	   	            }
+	    	        contours_plane.push_back(contour);
+	            }
+		        contours.push_back(contours_plane);
+	        }
         }
+
+	void AddToContour(std::vector<Vector3<T>>& contour,
+	                  std::vector<std::pair<Vector3<T>,
+	                  Vector3<T>>>& intersection_edges_plane,
+	                  bool& contour_complete) {
+
+	    T closest_distance = 99999999.0f;
+	    Vector3<T> closest_vertex;
+	    Vector3<T> connected_vertex;
+	    int closest_index = -1;
+        if (intersection_edges_plane.size() == 0) {
+            contour_complete = true;
+            return;
+        }
+	    for (int i = 0; i < intersection_edges_plane.size(); ++i) {
+		    Vector3<T> first_v = intersection_edges_plane[i].first;
+		    Vector3<T> second_v = intersection_edges_plane[i].second;
+
+		    T dist_1 = (first_v - contour[contour.size() - 1]).norm();
+	    	T dist_2 = (second_v - contour[contour.size() - 1]).norm();
+
+		    if (dist_1 < closest_distance) {
+		        closest_distance = dist_1;
+		        closest_vertex = first_v;
+		        connected_vertex = second_v;
+		        closest_index = i;
+		    }
+		    if (dist_2 < closest_distance) {
+		        closest_distance = dist_2;
+		        closest_vertex = second_v;
+		        connected_vertex = first_v;
+		        closest_index = i;
+		    }
+	    }
+	    T dist_first = (contour[0] - contour[contour.size() - 1]).norm();
+	    if (dist_first < 1e-6) {
+		    contour_complete = true;
+
+		    closest_distance = dist_first;
+		    contour.push_back(contour[0]);
+
+	    } else {
+            contour.push_back(connected_vertex);
+            intersection_edges_plane.erase(intersection_edges_plane.begin() + closest_index, intersection_edges_plane.begin() + closest_index + 1);
+	    }
+	}
 
         /* Generate infill pattern
            Goal: Given the contours at each layer, this function aims to infill the internal part by a pattern which
@@ -124,7 +227,32 @@ namespace fab_translation {
             std::vector<std::vector<std::pair<Vector3<T>, Vector3<T>>>>& infill_edges) {
             
             infill_edges.clear();
-            
+
+            T min_x = 999999999.0;
+            T max_x = -999999999.0;
+            T min_y = 999999999.0;
+            T max_y = -999999999.0;
+            for (int i = 0; i < contours.size(); ++i) {
+                std::vector<std::vector<Vector3<T>>> contour_plane = contours[i];
+                for (int j = 0; j < contour_plane.size(); ++j ) {
+                    std::vector<Vector3<T>> contour = contour_plane[j];
+                    for (int k = 0; k < contour.size(); ++k) {
+                        Vector3<T> vertex = contour[k];
+                        if (vertex[0] < min_x) {
+                            min_x = vertex[0];
+                        }
+                        if (vertex[0] > max_x) {
+                            max_x = vertex[0];
+                        }
+                        if (vertex[1] < min_y) {
+                            min_y = vertex[1];
+                        }
+                        if (vertex[1] > max_y) {
+                            max_y = vertex[1];
+                        }
+                    }
+                }
+            }
 
             for (int i = 0;i < contours.size();++i) {
                 std::vector<std::pair<Vector3<T>, Vector3<T>>> infill_edges_one_layer;
@@ -133,6 +261,92 @@ namespace fab_translation {
                 /* Implement your code here */
                 /* 1. find all intersections between contours and your infill pattern 
                 2. infill internal space with desired pattern */
+                T z = i * _dx;
+                std::vector<std::vector<Vector3<T>>> contour_plane = contours[i];
+                std::vector<std::vector<T>> x_intersections_plane;
+                std::vector<std::vector<T>> y_intersections_plane;
+                for (int j = 0; j < contour_plane.size(); ++j) {
+                    std::vector<Vector3<T>> contour = contour_plane[j];
+                    T x_index = 0;
+                    for (T x = min_x; x <= max_x; x += _infill_dx) {
+                        x_intersections_plane.push_back(std::vector<T>());
+                        Vector3<T> prev_vertex = contour[0];
+                        for (T k = 0; k < contour.size(); ++k) {
+                            Vector3<T> curr_vertex = contour[k];
+                            T prev_dist = x - prev_vertex[0];
+                            T curr_dist = x - curr_vertex[0];
+                            if ((abs(curr_vertex[0] - x) < 1e-6) && (k != 0)) {
+                                x_intersections_plane[x_index].push_back(curr_vertex[1]);
+                                continue;
+                            }
+                            if (prev_dist * curr_dist < 0) {
+                                if (prev_dist < 0) {
+                                    prev_dist = -1 * prev_dist;
+                                }
+                                if (curr_dist < 0) {
+                                    curr_dist = -1 * (curr_dist);
+                                }
+
+                                Vector3<T> edge = curr_vertex - prev_vertex;
+                                Vector3<T> edge_scaled = prev_vertex + edge*(prev_dist/(prev_dist + curr_dist));
+
+                                x_intersections_plane[x_index].push_back(edge_scaled[1]);
+                            }
+                            prev_vertex = curr_vertex;
+                        }
+                        x_index += 1;
+                    }
+
+                    T y_index = 0;
+                    for (T y = min_y; y <= max_y; y += _infill_dx) {
+                        y_intersections_plane.push_back(std::vector<T>());
+                        Vector3<T> prev_vertex = contour[0];
+                        for (T k = 0; k < contour.size(); ++k) {
+                            Vector3<T> curr_vertex = contour[k];
+                            T prev_dist = y - prev_vertex[1];
+                            T curr_dist = y - curr_vertex[1];
+                            if ((abs(curr_vertex[1] - y) < 1e-6) && (k != 0)) {
+                                y_intersections_plane[y_index].push_back(curr_vertex[0]);
+                                continue;
+                            }
+                            if (prev_dist * curr_dist < 0) {
+                                if (prev_dist < 0) {
+                                    prev_dist = -1 * prev_dist;
+                                }
+                                if (curr_dist < 0) {
+                                    curr_dist = -1 * curr_dist;
+                                }
+                                Vector3<T> edge = curr_vertex - prev_vertex;
+                                Vector3<T> edge_scaled = prev_vertex + edge*(prev_dist/(prev_dist + curr_dist));
+                                y_intersections_plane[y_index].push_back(edge_scaled[0]);
+                            }
+                            prev_vertex = curr_vertex;
+                        }
+                        y_index += 1;
+                    }
+
+                }
+
+                for (int k = 0; k < x_intersections_plane.size(); ++k) {
+                    std::sort(x_intersections_plane[k].begin(), x_intersections_plane[k].end());
+                    T x = k * _infill_dx + min_x;
+                    for (int l = 0; l < x_intersections_plane[k].size(); l += 2) {
+                        Vector3<T> start = Vector3<T>(x, x_intersections_plane[k][l], z);
+                        Vector3<T> stop = Vector3<T>(x, x_intersections_plane[k][l + 1], z);
+
+                        infill_edges_one_layer.push_back(std::make_pair(start, stop));
+                    }
+                }
+                for (int k = 0; k < y_intersections_plane.size(); ++k) {
+                    std::sort(y_intersections_plane[k].begin(), y_intersections_plane[k].end());
+                    T y = k * _infill_dx + min_y;
+                    for (int l = 0; l < y_intersections_plane[k].size(); l += 2) {
+                        Vector3<T> start = Vector3<T>(y_intersections_plane[k][l], y, z);
+                        Vector3<T> stop = Vector3<T>(y_intersections_plane[k][l + 1], y, z);
+
+                        infill_edges_one_layer.push_back(std::make_pair(start, stop));
+                    }
+                }
 
                 infill_edges.push_back(infill_edges_one_layer);
             }
@@ -254,5 +468,7 @@ namespace fab_translation {
 
         /* accelerated data structure */
         data_structure::IntervalTree<T> _interval_tree;
+
+        std::vector<std::vector<std::vector<Vector3<T>>>> z_map;
     };
 }
