@@ -80,6 +80,17 @@ namespace geometry {
             return intersections;
         }
 
+        // Assignment 2: implement ray-triangle intersection.
+        // The ray is defined as r(t) = origin + t * dir.
+        // You should return a scalar t such that r(t) is the intersection point. Which value
+        // to return for the case of no intersections is up to you. You can also change the
+        // signature of this function as you see fit.
+        const T IntersectRay(const Vector3<T>& origin, const Vector3<T>& dir) const {
+            /* Assignment 2. */
+            /* Implement your code here */
+            return 0;
+        }
+
     private:
         Vector3<T> _vertices[3];
     };
