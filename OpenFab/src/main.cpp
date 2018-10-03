@@ -39,7 +39,7 @@ int main() {
     std::vector<Eigen::Vector3d> path;
     path.clear();
     for (int i = 0;i < 50;++i)
-        path.push_back(Eigen::Vector3d(sin(i * 0.1), cos(i * 0.1), i * 0.01));
+        path.push_back(Eigen::Vector3d(sin(i * 0.5), i * 0.01, cos(i * 0.5)));
     paths.push_back(path);
     fab_translation::GCodeConverter::ConvertToGCode(paths, nullptr);
 
