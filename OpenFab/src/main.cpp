@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
     int t0 = std::clock();
     const std::string stl_name(argv[1]);
     const double dx = std::stod(argv[2]);
+    std::cout << std::string(PROJECT_SOURCE_DIR) << std::endl;
     mesh::Voxelizer<double> voxelizer(std::string(PROJECT_SOURCE_DIR) + "/data/assignment2/" + stl_name, dx);
     int t1 = std::clock();
     std::cout << "load mesh success... " << (double)(t1 - t0) / 1000000.0 << " seconds." << std::endl;

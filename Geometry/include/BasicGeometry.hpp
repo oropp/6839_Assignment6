@@ -57,7 +57,39 @@ namespace geometry {
         const T IntersectRay(const Vector3<T>& origin, const Vector3<T>& dir) const {
             /* Assignment 2. */
             /* Implement your code here */
-            return 0;
+
+            Vector3<T> A = _vertices[0];
+            Vector3<T> B = _vertices[1];
+            Vector3<T> C = _vertices[2];
+
+            /* Find the intersection of the ray and the plane */
+            Vector3<T> BA = B - A;
+            Vector3<T> CA = C - A;
+            Vector3<T> n = (BA.cross(CA))/((BA.cross(CA)).norm());
+            T D_plane = n.dot(A);
+            T t = (D_plane - n.dot(origin))/(n.dot(dir));
+
+            /* Check if the intersection point is in the triangle */
+            Vector3<T> intersectionPoint = origin + t*dir;
+
+            Vector3<T> AB = A - B;
+            Vector3<T> AIntersectionPoint = A - intersectionPoint;
+            Vector3<T> crossA = AB.cross(AIntersectionPoint);
+
+            Vector3<T> BC = B - C;
+            Vector3<T> BIntersectionPoint = B - intersectionPoint;
+            Vector3<T> crossB = BC.cross(BIntersectionPoint);
+
+            Vector3<T> CIntersectionPoint = C - intersectionPoint;
+            Vector3<T> crossC = CA.cross(CIntersectionPoint);
+
+            if (n.dot(crossA) >= 0 && n.dot(crossB) >= 0 && n.dot(crossC) >= 0) {
+                return t;
+            } else if (n.dot(crossA) < 0 && n.dot(crossB) < 0 && n.dot(crossC) < 0) {
+                return t;
+            }
+
+            return -1.0;
         }
 
     private:
