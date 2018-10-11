@@ -1,6 +1,10 @@
 project(OpenFab)
-cmake_minimum_required(VERSION 3.11)
+# cmake_minimum_required(VERSION 3.11)
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake_utils
+  ${CMAKE_CURRENT_SOURCE_DIR}/ExternalLibs/libigl/shared/cmake)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_LIBRARIES -ldl)
@@ -13,7 +17,7 @@ set(CMAKE_CXX_FLAGS -O3 ${CMAKE_CXX_FLAGS})
 add_definitions(-DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
 #Add externals
-#ExternalProject_Add(Eigen3 ExternalLibs/eigen3)
+# ExternalProject_Add(Eigen3 ExternalLibs/eigen3)
 #add_subdirectory(ExternalLibs/CppAd)
 #ExternalProject_Add( Eigen3
 #  URL "http://bitbucket.org/eigen/eigen/get/${Eigen3_VERSION}.tar.gz"
@@ -37,6 +41,7 @@ set(CPPAD_INCLUDE_DIRS "ExternalLibs/CppAD")
 #set(GOOGLETEST_SOURCE_DIR "ExternalLibs/googletest/googletest")
 add_subdirectory(ExternalLibs/CppADCodeGen)
 add_subdirectory(ExternalLibs/googletest)
+add_subdirectory(ExternalLibs/glew)
 add_subdirectory(ExternalLibs/libigl/external/glfw)
 add_subdirectory(ExternalLibs/libigl/external/glad)
 #ExternalProject_Add(CppADCodeGen ExternalLibs/CppADCodeGen)
@@ -64,6 +69,7 @@ add_subdirectory(RigidBodyMechanics)
 add_subdirectory(Sampling)
 add_subdirectory(Simulation)
 add_subdirectory(Test)
+add_subdirectory(cmake_utils)
 if(UNIX)
   add_subdirectory(Visualization)
 endif(UNIX)

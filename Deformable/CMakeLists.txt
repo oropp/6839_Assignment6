@@ -1,5 +1,5 @@
 project(Deformable)
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.5)
 
 set(Deformable_Include_Dir ${PROJECT_SOURCE_DIR}/include)
 
