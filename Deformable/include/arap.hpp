@@ -114,7 +114,36 @@ void cotmatrix(
   // create sparse matrix entries
   std::vector<Entry> entries;
   entries.reserve(m * 3 * 4);
-  //TODO: Fill in entries  
+  //TODO: Fill in entries
+
+  for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < n; ++j) {
+          if (i == j) {
+              double sum = 0;
+              for (int k = 0; k < m; ++k) {
+                  bool neighbor = false;
+                  int indexVertex = 0;
+                  for (int l = 0; l < 3; ++l) {
+                      if (F[k][l] == i) {
+                          neighbor = true;
+                          indexVertex = l;
+                      }
+                  }
+                  if (neighbor) {
+                      for (int l = 0; l < 3; ++l) {
+                          if (l != indexVertex) {
+                              sum += C[k][l];
+                          }
+                      }
+                  }
+              }
+              entries.push_back(sum);
+          } else {
+              entries.push_back(-edges(i, j));
+          }
+      }
+  }
+
   L.setFromTriplets(entries.begin(), entries.end());
 }
 
