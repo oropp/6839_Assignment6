@@ -114,36 +114,35 @@ void cotmatrix(
   // create sparse matrix entries
   std::vector<Entry> entries;
   entries.reserve(m * 3 * 4);
-  //TODO: Fill in entries
 
-  for (int i = 0; i < n; ++i) {
-      for (int j = 0; j < n; ++j) {
-          if (i == j) {
-              double sum = 0;
-              for (int k = 0; k < m; ++k) {
-                  bool neighbor = false;
-                  int indexVertex = 0;
-                  for (int l = 0; l < 3; ++l) {
-                      if (F[k][l] == i) {
-                          neighbor = true;
-                          indexVertex = l;
-                      }
-                  }
-                  if (neighbor) {
-                      for (int l = 0; l < 3; ++l) {
-                          if (l != indexVertex) {
-                              sum += C[k][l];
-                          }
-                      }
-                  }
-              }
-              entries.push_back(sum);
-          } else {
-              entries.push_back(-edges(i, j));
-          }
+  /*
+   * After discussions with Andrew Spielberg, Alexandre Kaspar, and Andy Wang, I changed
+   * my approach from looping over all of the vertices to looping over all of the faces.
+   *
+   * I believe that this approach will still find all of the weights necessary, because
+   * the weights not on the faces should be zero.
+   */
+
+  // for all faces
+  for (int f = 0; f < m; ++f) {
+      // for all half edges
+      for (int e = 0; e < 3; ++e) {
+          // Get the two vertices at either end of the edge
+          auto v0 = edges(e, 0);
+          auto v1 = edges(e, 1);
+          int i = F(f, v0);
+          int j = F(f, v1);
+
+          // Get the corresponding cotangent weight for this edge.
+          double val = C(f, e);
+
+          // Add all of the combinations of i and j to entries, making sure that the non-diagonal values are negative
+          entries.push_back(Eigen::Triplet<Scalar>(i, j, -val));
+          entries.push_back(Eigen::Triplet<Scalar>(j, i, -val));
+          entries.push_back(Eigen::Triplet<Scalar>(i, i, val));
+          entries.push_back(Eigen::Triplet<Scalar>(j, j, val));
       }
   }
-
   L.setFromTriplets(entries.begin(), entries.end());
 }
 
@@ -183,7 +182,26 @@ void arap_linear_block(
   for(int i = 0; i < m; ++i){
     // for each half-edge
     for(int e = 0; e < 3; ++e){
-      //TODO: fill in entries here.
+        // Get each of the three vertices from the face
+      int src = F(i, edges(e, 0));
+      int trg = F(i, edges(e, 1));
+      int oth = F(i, 3 - edges(e, 0) - edges(e, 1));
+
+      // Calculate the value for this edge from the C matrix
+      auto delta = V.row(src) - V.row(trg);
+      double val = C(i, e) * delta(d)/3.0;
+
+      // This is the offset to account for the different sub matrices of K, Kx, Ky, and Kz
+      int offset = d*n;
+
+      // Add all of the combinations of the vertices to entries, accoutning for the correct sign of value.
+      // Don't need oth, oth because these will be considered in other values of e.
+      entries.push_back(Eigen::Triplet<Scalar>(src, trg + offset, val));
+      entries.push_back(Eigen::Triplet<Scalar>(trg, src + offset, -val));
+      entries.push_back(Eigen::Triplet<Scalar>(src, src + offset, val));
+      entries.push_back(Eigen::Triplet<Scalar>(trg, trg + offset, -val));
+      entries.push_back(Eigen::Triplet<Scalar>(src, oth + offset, val));
+      entries.push_back(Eigen::Triplet<Scalar>(trg, oth + offset, -val));
     }
   }
 }
@@ -237,7 +255,19 @@ void arap_precompute(
 
   // compute K = [Kx, Ky, Kz]
   std::vector<Triplet<Scalar> > entries;
-  //TODO: Compute K (Hint: Use igl::min_quad_with_fixed_precompute)
+
+  // For all values of d
+  for (int d = 0; d < 3; ++d) {
+      int fromRow = 0;
+      // Fill th entries with the values for one chunk of the K matrix
+      arap_linear_block(V, F, C, d, fromRow*n, d*n, entries);
+  }
+  // Transform the entries into the K matrix
+  K.resize(n, 3*n);
+  K.setFromTriplets(entries.begin(), entries.end());
+
+  // Precompute the min quad so that we can iterate more efficiently
+  igl::min_quad_with_fixed_precompute(L, b, Eigen::SparseMatrix<Scalar>(), true, data);
 }
 
 /**
@@ -280,7 +310,28 @@ void solve_rotations(
 
   R.resize(3 * nr, 3);
   // for each rotation
-  //TODO: compute R
+
+  // For all vertices
+  for (int i = 0; i < nr; i += 3) {
+      Mat3 C_i, R_i;
+
+      // Fill the C_i matrix from the C matrix that's passed in
+      for (int j = 0; j < 3; ++j) {
+          C_i(0, j) = C(j, i);
+          C_i(1, j) = C(j, i + nr);
+          C_i(2, j) = C(j, i + 2*nr);
+      }
+
+
+      // Use the SVD to get the R_i matrix from C_i
+      igl::polar_svd3x3(C_i, R_i);
+
+      // Decompose the R_i matrix into the larger R matrix
+      R_i.transpose();
+      R.row(i) = R_i.row(0);
+      R.row(i + nr) = R_i.row(1);
+      R.row(i + 2*nr) = R_i.row(2);
+  }
 }
 
 template<typename Scalar, typename Typebc, typename TypeU>
@@ -304,12 +355,21 @@ void arap_single_iteration(
 
   // local solve: fix vertices, find rotations
 local: {
-    //TODO local solve.  Hint: use solve_rotations here
+    // Create the C matrix needed to pass into solve rotations.
+    Matrix<Scalar, Dynamic, Dynamic> C(3, 3*n);
+    C = U.transpose()*K;
+
+    solve_rotations(C, R);
   }
 
   // global solve: fix rotations, find vertices
 global: {
     typedef Matrix<Scalar, Dynamic, 1> Vector;
-    //TODO: global solve.  Hint: use calls to igl::min_quad_with_fixed_solve here.
+
+    // Create the B and Beq matrices needed to call igl::min_quad_with_fixed_solve
+    auto B = -(K*R).eval();
+    Matrix<Scalar, Dynamic, Dynamic> Beq;
+
+    igl::min_quad_with_fixed_solve(data, B, bc, Beq, U);
     }
 }

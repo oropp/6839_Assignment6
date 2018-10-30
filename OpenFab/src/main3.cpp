@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 
   // Load input meshes
   igl::read_triangle_mesh(
-    (argc>1?argv[1]:"../data/assignment3/decimated-knight.off"),V,F);
+    (argc>1?argv[1]:"/home/computationalfabrication/CompFab/ComputationalFabrication/data/assignment3/decimated-knight.off"),V,F);
   U = V;
   igl::viewer::Viewer viewer;
   std::cout<<R"(
