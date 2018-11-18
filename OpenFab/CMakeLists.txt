@@ -19,11 +19,14 @@ file(GLOB_RECURSE OpenFab_Viewer ${OpenFab_Include_Dir}/igl/viewer/*.cpp)
 set(Assignment2_Sources ${OpenFab_Source_Dir}/main2.cpp)
 set(Assignment3_Sources ${OpenFab_Source_Dir}/main3.cpp) # ${OpenFab_Viewer})
 set(Assignment4_Sources ${OpenFab_Source_Dir}/main4.cpp)
+set(Assignment6_Sources ${OpenFab_Source_Dir}/main6.cpp)
 
 #Main setup
 add_executable(Assignment2 ${OpenFab_Header} ${Assignment2_Sources})
 add_executable(Assignment3 ${OpenFab_Header} ${Assignment3_Sources})
 add_executable(Assignment4 ${OpenFab_Header} ${Assignment4_Sources})
+add_executable(Assignment6 ${OpenFab_Header} ${Assignment6_Sources})
+
 
 # Specific includes
 target_include_directories(Assignment2 PRIVATE ../DataStructure/include)
@@ -56,12 +59,23 @@ target_include_directories(Assignment4 PRIVATE ../NetworkCommunication/include)
 target_include_directories(Assignment4 PRIVATE ../FabTranslation/include)
 target_include_directories(Assignment4 PRIVATE ../ExternalLibs/eigen-git-mirror)
 
+
+target_include_directories(Assignment6 PRIVATE ../Materials/include)
+target_include_directories(Assignment6 PRIVATE ../DataStructure/include)
+target_include_directories(Assignment6 PRIVATE ../Geometry/include)
+target_include_directories(Assignment6 PRIVATE ../AutodiffEngine/include)
+target_include_directories(Assignment6 PRIVATE ../Mesh/include)
+target_include_directories(Assignment6 PRIVATE ../NetworkCommunication/include)
+target_include_directories(Assignment6 PRIVATE ../FabTranslation/include)
+target_include_directories(Assignment6 PRIVATE ../ExternalLibs/eigen-git-mirror)
+
+
 target_include_directories(glew SYSTEM PUBLIC ../ExternalLibs/glew/include)
 target_compile_definitions(glew PUBLIC -DGLEW_BUILD -DGLEW_NO_GLU)
 
 
 # Generic includes / linking
-foreach(Target IN LISTS Assignment2 Assignment3 Assignment4)
+foreach(Target IN LISTS Assignment2 Assignment3 Assignment4 Assignment6)
   
   target_include_directories(${Target} PRIVATE ${OpenFab_Include_Dir})
   #Add external libraries
