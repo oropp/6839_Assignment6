@@ -71,7 +71,7 @@ void write_voxel_grid(const std::string& filename, const Eigen::Matrix<double, 3
 
 }
 
-void SolvePerformance(std::string stl_name, std::vector<double>& compliance, std::vector<double>& num_voxels) {
+void SolvePerformance(std::string stl_name, double& compliance, double& num_voxels) {
     // Q4: implement the pipeline from design space to the performance space
     // push_back your results to the compliance and num_voxels
     const int dim = 3;
@@ -79,9 +79,6 @@ void SolvePerformance(std::string stl_name, std::vector<double>& compliance, std
     double dx = 0.25;
 
     // Your code starts here!!
-    // Remove dummy code
-    compliance.push_back(0.0);
-    num_voxels.push_back(0.0);
 }
 
 int main(int argc, char *argv[])
@@ -161,16 +158,13 @@ int main(int argc, char *argv[])
     fileEC1.close();
 
     // Q4: implement the pipeline from design space to the performance space
-    std::vector<double> compliance;
-    std::vector<double> num_voxels;
-    compliance.clear();
-    num_voxels.clear();
+    double compliance, num_voxels;
 
     // Once you debug the bridge example correct, comment the code before dash line
     // and uncomment the code after dash line to run the test on 121 bridges
-    SolvePerformance("../../data/assignment6/bridge.stl", compliance, num_voxels);
+    SolvePerformance(PROJECT_SOURCE_DIR"/data/assignment6/bridge.stl", compliance, num_voxels);
     // -----------------------------------------------------------------------
-    // std::string base = "../../CSG/assn6_meshes/bridge";
+    // std::string base(PROJECT_SOURCE_DIR"/CSG/assn6_meshes/bridge");
     // int radius_start = 30;
     // int radius_end   = 40;
     // int offset_start = -30;
@@ -186,10 +180,10 @@ int main(int argc, char *argv[])
     //         std::string mesh_name = base + "_r_" + std::to_string(r) + "_o_" + std::to_string(o);
     //         std::cout << "bridge_r_" + std::to_string(r) + "_o_" + std::to_string(o) << std::endl;
     //         SolvePerformance(mesh_name, compliance, num_voxels);
-    //         p4_input.push_back(Eigen::Vector2d(compliance[count], num_voxels[count]));
+    //         p4_input.push_back(Eigen::Vector2d(compliance, num_voxels));
     //         file4 << "bridge_r_" + std::to_string(r) + "_o_" + std::to_string(o) + ".stl" << std::endl;
-    //         file4 << "Compliance: " +  std::to_string(compliance[count]) << std::endl;
-    //         file4 << "Total mass: " + std::to_string(num_voxels[count]) << std::endl << std::endl;
+    //         file4 << "Compliance: " +  std::to_string(compliance) << std::endl;
+    //         file4 << "Total mass: " + std::to_string(num_voxels) << std::endl << std::endl;
     //         count++;
     //     }
     // }
