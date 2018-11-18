@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
     // int count = 0;
     // for (int r = radius_start; r <= radius_end; r++) {
     //     for (int o = offset_start; o <= offset_end; o++) {
-    //         std::string mesh_name = base + "_r_" + std::to_string(r) + "_o_" + std::to_string(o);
+    //         std::string mesh_name = base + "_r_" + std::to_string(r) + "_o_" + std::to_string(o) + '.stl';
     //         std::cout << "bridge_r_" + std::to_string(r) + "_o_" + std::to_string(o) << std::endl;
     //         SolvePerformance(mesh_name, compliance, num_voxels);
     //         p4_input.push_back(Eigen::Vector2d(compliance, num_voxels));
