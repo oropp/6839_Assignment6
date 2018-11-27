@@ -100,10 +100,43 @@ int main(int argc, char *argv[])
     materials::HexDeformableBody<double> hex_def_body(linear_elasticity_material, hex_mesh.vertex(), 0.4, hex_mesh);
 
     //TODO: Students take it from here!
+    // Initialize F and K with the original dimensions using all vertices.
+    Eigen::Matrix<double, 3*num_vertices, 1> pre_F;
+    Eigen::Matrix<double, 3*num_vertices, 3*num_vertices> pre_K = hex_def_body.ComputeStiffnessMatrix(hex_mesh.vertex());
+
+    // Set the forces on the right most vertices to be -10 in the z direrction
+    for (int vertex_index = num_vertices - num_x_vertices; vertex_index < num_x_vertices; ++vertex_index) {
+        pre_F(3*vertex_index + 2, 0) = -10.0;
+    }
+
+    /*
+     * Initialize the F, U, and K matrices to be the correct final dimensions (they don't include the vertices that
+     * will be removed to keep them fixed)
+     */
+    Eigen::Matrix<double, 3*num_vertices - 3*num_x_vertices*num_z_vertices, 1> F;
+    Eigen::Matrix<double, 3*num_vertices - 3*num_x_vertices*num_z_vertices, 1> U;
+    Eigen::Matrix<double,
+                  3*num_vertices - 3*num_x_vertices*num_z_vertices,
+                  3*num_vertices - 3*num_x_vertices*num_z_vertices> K;
+
+    // Get the final F and K vertices that remove the left most vertices that should be fixed.
+    F = pre_F.block<3*num_vertices - 3*num_x_vertices*num_z_vertices, 1>(3*num_x_vertices*num_z_vertices, 1);
+    K = pre_K.block<3*num_vertices - 3*num_x_vertices*num_z_vertices,
+                    3*num_vertices - 3*num_x_vertices*num_z_vertices>(3*num_x_vertices*num_z_vertices,
+                                                                      3*num_x_vertices*num_z_vertices);
+
+    // Make sure that the K matrix is positive definite.
+    Eigen::MatrixXd identity = Eigen::MatrixXd::Identity(3*num_vertices - 3*num_x_vertices*num_z_vertices,
+            3*num_vertices - 3*num_x_vertices*num_z_vertices);
+    K = K + pow(10, -4)*identity;
+
+    // Solve for U 
+    Eigen::ConjugateGradient<Eigen::MatrixXd> cg;
+    cg.compute(K);
+    U = cg.solve(F);
+
+
     
     std::cout << "Done with OpenFab!  Have a squishy day." << std::endl;
-
-
-
 
 }
