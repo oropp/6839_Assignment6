@@ -84,6 +84,7 @@ void SolvePerformance(std::string stl_name, double& compliance, double& num_voxe
 int main(int argc, char *argv[])
 {
     int N = 20000;
+//    int N = 5;
     std::vector<Eigen::Vector2d> p1_input; 
     std::vector<Eigen::VectorXd> p2_input;
     std::vector<Eigen::Vector2d> p3_input;
@@ -104,6 +105,8 @@ int main(int argc, char *argv[])
         p3_input.push_back(Eigen::Vector2d::Random()+Eigen::Vector2d::Ones());
         ec_input.push_back(Eigen::Vector3d::Random()+Eigen::Vector3d::Ones());
     }
+    std::cout << " \n" << std::flush;
+
 
     // test Q1: 2D convex hull
     std::vector<Eigen::Vector2d> p1_result = geometry::ConvexHull2D(p1_input);
@@ -111,7 +114,7 @@ int main(int argc, char *argv[])
     std::ofstream file1;
     file1.open("q1_result.txt");
     file1 << "print Q1 test result" << std::endl;
-    file1 << "Totol number of points: " << p1_result.size() << std::endl;
+    file1 << "Total number of points: " << p1_result.size() << std::endl;
     for (int i = 0; i < p1_result.size(); i++) {
         file1 << "P" << i << ": " << std::endl;
         file1 << p1_result[i] << std::endl;
@@ -163,6 +166,11 @@ int main(int argc, char *argv[])
     // Once you debug the bridge example correct, comment the code before dash line
     // and uncomment the code after dash line to run the test on 121 bridges
     SolvePerformance(PROJECT_SOURCE_DIR"/data/assignment6/bridge.stl", compliance, num_voxels);
+
+    std::vector<Eigen::Vector2d<double>> designSpace;
+    designSpace.push_back(Eigen::Vector2d<double>(compliance, num_voxels));
+
+    geometry::ParetoFront2D(designSpace);
     // -----------------------------------------------------------------------
     // std::string base(PROJECT_SOURCE_DIR"/CSG/assn6_meshes/bridge");
     // int radius_start = 30;
